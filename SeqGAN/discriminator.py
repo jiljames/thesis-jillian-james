@@ -180,8 +180,25 @@ class Discriminator(object):
             with tf.name_scope("loss"):
                 losses = tf.nn.softmax_cross_entropy_with_logits(logits=self.scores, labels=self.input_y)
                 self.loss = tf.reduce_mean(losses) + l2_reg_lambda * l2_loss
+        #new 
+        def train_one_step(optimizer, grads_and_vars):
+            optimizer.apply_gradients(grads_and_vars)
+            return self.loss
+        
 
         self.params = [param for param in tf.trainable_variables() if 'discriminator' in param.name]
         d_optimizer = tf.train.AdamOptimizer(1e-4)
         grads_and_vars = d_optimizer.compute_gradients(self.loss, self.params, aggregation_method=2)
-        self.train_op = d_optimizer.apply_gradients(grads_and_vars)
+        #self.train_op = d_optimizer.apply_gradients(grads_and_vars)
+        self.train_op = train_one_step(d_optimizer, grads_and_vars)
+
+    def score_predicts(self, sess, x_inputs, y_inputs):
+        feed = {self.input_x: x_inputs, self.dropout_keep_prob: 1.0}
+        ypred = sess.run(self.predictions, feed)
+        yactual = np.array([item[1] for item in y_inputs])
+        #print(ypred)
+        #print(y_inputs)
+        #print(ypred.shape)
+        #print(y_inputs.shape)
+        scored = tf.contrib.metrics.f1_score(yactual, ypred)
+        return scored

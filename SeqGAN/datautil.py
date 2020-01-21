@@ -58,6 +58,26 @@ class ObamaTokenizer:
                     n+= 1
         return full
 
+PASSIVE_EATING_VERBS = ["eaten", "consumed", "devoured"]
+ACTIVE_EATING_VERBS = ["eats", "consumes", "devours"]
+
+def is_phrase_valid_passive(phrase):
+    if len(phrase) != 5: return False
+    if "food" not in phrase[0]: return False
+    if phrase[1] != "is": return False
+    if phrase[2] not in PASSIVE_EATING_VERBS: return False
+    if phrase[3] != "by": return False
+    if "eater" not in phrase[4]: return False
+    return True
+
+
+def is_phrase_valid_active(phrase):
+    if len(phrase) != 3: return False
+    if "eater" not in phrase[0]: return False
+    if phrase[1] not in ACTIVE_EATING_VERBS: return False
+    if "food" not in phrase[2]: return False
+    return True
+
 
 class Vocab:
     
@@ -139,7 +159,7 @@ def load_task(taskname):
         max_seq_length = 70
         tokenizer = HaikuTokenizer(max_seq_length)
     else:
-        print("Application must be haiku or obama")
+        print("Application must be haiku or obama or synth")
         sys.exit(0)
      
     path = join("../data", taskname)
@@ -161,6 +181,7 @@ def load_task(taskname):
 
     # Write to correct application training and validation files
     # Write conversion dictionaries
+
     write_lists_to_file(task.train_file, train_as_int_ls)
     write_lists_to_file(task.valid_file, valid_as_int_ls)
     write_lists_to_file(task.test_file, test_as_int_ls)
