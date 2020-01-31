@@ -58,26 +58,6 @@ class ObamaTokenizer:
                     n+= 1
         return full
 
-PASSIVE_EATING_VERBS = ["eaten", "consumed", "devoured"]
-ACTIVE_EATING_VERBS = ["eats", "consumes", "devours"]
-
-def is_phrase_valid_passive(phrase):
-    if len(phrase) != 5: return False
-    if "food" not in phrase[0]: return False
-    if phrase[1] != "is": return False
-    if phrase[2] not in PASSIVE_EATING_VERBS: return False
-    if phrase[3] != "by": return False
-    if "eater" not in phrase[4]: return False
-    return True
-
-
-def is_phrase_valid_active(phrase):
-    if len(phrase) != 3: return False
-    if "eater" not in phrase[0]: return False
-    if phrase[1] not in ACTIVE_EATING_VERBS: return False
-    if "food" not in phrase[2]: return False
-    return True
-
 
 class Vocab:
     
@@ -125,6 +105,7 @@ class Vocab:
 class Task:
     def __init__(self, vocab, path, max_seq_length, num_train, 
                  num_valid, num_test):
+        self.name = ""
         self.vocab = vocab
         self.path = path
         self.train_file = join(path, "encoded.train.txt")
@@ -146,9 +127,8 @@ def load_task(taskname):
             for ls in full_lists:
                 line = " ".join([str(x) for x in ls])+ "\n"
                 f.write(line)
-
+    self.name = taskname
     print("Loading task: " + str(taskname))
-
     if taskname == 'obama':
         max_seq_length = 40
         tokenizer = ObamaTokenizer(max_seq_length)

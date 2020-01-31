@@ -1,13 +1,17 @@
 import tensorflow as tf
 import time
 import os
+import csv
+import argparse
+from nltk import translate.bleu_score.corpus_bleu as corpus_bleu
 from dataloader import Gen_Data_loader, Dis_dataloader
 from generator import Generator, pre_train_generator
 from discriminator import Discriminator, train_discriminator
 from rollout import ROLLOUT
-import argparse
 from trainutil import generate_samples, target_loss
 from datautil import load_task
+from synthetic import generate_random_sents, is_valid
+
 
 ###############################################################################
 #  Generator  Hyper-parameters
@@ -87,13 +91,23 @@ def main():
         parser.add_argument('-l', metavar="seq_len", type = int, default = -1,
                         help = 'Length of the token sequences used for training.')
         parser.add_argument('-v', metavar="vocab_size", type = int, default = -1,
-                        help = "The size of the vocab from the input files (outout by datautil.py)")
+                        help = "For use with app = synth. Determines the size of vocab for synthetic data.")
         parser.add_argument('-mn', metavar="model_name", type = str, default = "",
                         help = "Name for the checkpoint files. Will be stored at ./<app>/models/<model_name>")
     
-        args = parser.parse_args()        
+        args = parser.parse_args()
+
+        #Generate synthetic data if required
+        if args.app == "synth" and args.v != "":
+            num_eat = (int(args.v) - 6) // 2 #Specific to the current synthetic generation
+            num_feed = int(args.v) - num_eaters
+        elif args.app == "synth" and args.v == "":
+            num_eat = 500
+            num_feed = 500
+        synthetic.generate_random_sents("../data/synth/input.txt", 10,000, num_feed, num_eat)
+
         task = load_task(args.app)
-    
+
         #Make the /models directory if its not there.
         model_string = task.path +"/models/"
         if not os.path.exists("./"+model_string):
@@ -112,10 +126,7 @@ def main():
     
     gen_n, disc_n, adv_n, MODEL_STRING, task = parse_arguments()
 
-    # Initialize the random seed
-    #random.seed(SEED)
-    #np.random.seed(SEED)
-    #tf.set_random_seed(SEED)
+
     assert START_TOKEN == 0
 
     tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
@@ -180,6 +191,50 @@ def main():
     saver.restore(sess, tf.train.latest_checkpoint(MODEL_STRING))
     generate_samples(sess, generator, BATCH_SIZE, task.generated_num, 
                      task.eval_file)
+
+
+    #Writing results to CSV
+    with open(task.eval_file) as f:
+        generated = []
+        for line in f:
+            line = line.strip()
+            generated.append(line)
+        generated = task.vocab.decode(generated)
+        f.close()
+
+    with open(task.test_file) as f:
+        references = []
+        for line in f:
+            line = line.strip()
+            references.append(line)
+        references = task.vocab.decode(references)  
+        f.close()      
+
+    blue = corpus_bleu([references]*len(generated), generated)
+    print("Run with args {} {} {}: BLEUscore = {}\n".format(gen_n, disc_n, adv_n, blue))
+    
+    prop = "NA"
+
+    if files == synth_files:
+        
+        total_correct = 0
+        for sentence in generated:
+            if synthetic.is_phrase_valid_passive(sentence) or synthetic.is_phrase_valid_active(sentence):
+                total_correct +=1
+        prop = total_correct/len(generated)
+        
+    if not os.path.exists("./results.csv"):
+        os.mknod("./results.csv")
+
+    with open("./results.csv", 'a') as csvfile:
+        fieldnames = ["name", "task_name", "num_adv", "num_disc", "num_gen", 
+                            "num_eaters", "num_feeders", "BLEU", "prop_valid"]
+        writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+        writer.writerow({"name": MODEL_STRING, "task_name": task.name,  "num_gen": gen_n, 
+                        "num_disc":disc_n "num_adv": adv_n, "vocab_length": task.vocab_size,
+                        "BLEU": blue, "prop_valid": prop})
+        f.close()
+
 
     log.close()
 
