@@ -33,6 +33,9 @@ dis_l2_reg_lambda = 0.2
 dis_batch_size = 64
 
 
+# For me for running on Mark's machine
+os.environ["CUDA_VISIBLE_DEVICES"]="1,2" 
+
 
 def train_adversarial(sess, saver, MODEL_STRING, generator, discriminator, 
                       rollout, dis_data_loader, likelihood_data_loader, 
