@@ -10,7 +10,7 @@ from discriminator import Discriminator, train_discriminator
 from rollout import ROLLOUT
 from trainutil import generate_samples, target_loss
 from datautil import load_task
-from synthetic import generate_random_sents, is_valid
+from synthetic import generate_random_sents, is_valid_phrase
 
 
 ###############################################################################
@@ -97,14 +97,14 @@ def main():
                         help = "For synthetic data generation. Determines number of eaters in vocab.")
         parser.add_argument('-numfeed', metavar="num_feed", type = int, default = 500,
                         help = "For synthetic data generation. Determines number of feeders in vocab.")
-        parser.add_argument('-numsent',etavar="num_sent", type = int, default = 10000,
-                        help = "For synthetic data generation. Determines number of sentences generated."))
+        parser.add_argument('-numsent', metavar="num_sent", type = int, default = 10000,
+                        help = "For synthetic data generation. Determines number of sentences generated.")
         args = parser.parse_args()
 
         synth_gen_params = ("NA", "NA", "NA")
         if args.app == "synth":
             synth_gen_params = (args.numsent, args.numfeed, args.numeat)
-            synthetic.generate_random_sents("../data/synth/input.txt", args.numsent, args.numfeed, args.numeat)
+            generate_random_sents("../data/synth/input.txt", args.numsent, args.numfeed, args.numeat)
 
         task = load_task(args.app)
 
@@ -219,7 +219,7 @@ def main():
         
         total_correct = 0
         for sentence in generated:
-            if synthetic.is_phrase_valid_passive(sentence) or synthetic.is_phrase_valid_active(sentence):
+            if is_valid_phrase(sentence):
                 total_correct +=1
         prop = total_correct/len(generated)
         
