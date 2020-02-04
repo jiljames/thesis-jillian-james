@@ -53,4 +53,5 @@ def is_valid_active(phrase):
     return True
 
 def is_valid_phrase(phrase):
+    phrase = phrase.split()
     return is_valid_active(phrase) or is_valid_passive(phrase)

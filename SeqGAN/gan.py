@@ -197,7 +197,7 @@ def main():
     with open(task.eval_file) as f:
         generated = []
         for line in f:
-            line = line.strip()
+            line = line.strip().split()
             generated.append(line)
         generated = task.vocab.decode(generated)
         f.close()
@@ -205,7 +205,7 @@ def main():
     with open(task.test_file) as f:
         references = []
         for line in f:
-            line = line.strip()
+            line = line.strip().split()
             references.append(line)
         references = task.vocab.decode(references)  
         f.close()      
@@ -215,8 +215,7 @@ def main():
     
     prop = "NA"
 
-    if files == synth_files:
-        
+    if task.name == "synth":
         total_correct = 0
         for sentence in generated:
             if is_valid_phrase(sentence):
@@ -230,6 +229,7 @@ def main():
         fieldnames = ["name", "task_name", "num_gen", "num_disc", "num_adv",
                     "num_sents", "num_feeders", "num_eaters", "BLEU", "prop_valid"]
         writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+        writer.writeheader()
         writer.writerow({"name": MODEL_STRING, "task_name": task.name,  "num_gen": gen_n, 
                         "num_disc":disc_n, "num_adv": adv_n, "num_sents":SYNTH_GEN_PARAMS[0],
                         "num_feeders":SYNTH_GEN_PARAMS[1], "num_eaters":SYNTH_GEN_PARAMS[2],
