@@ -3,14 +3,14 @@ import time
 import os
 import csv
 import argparse
-from nltk import translate.bleu_score.corpus_bleu as corpus_bleu
+from nltk.translate.bleu_score import corpus_bleu
 from dataloader import Gen_Data_loader, Dis_dataloader
 from generator import Generator, pre_train_generator
 from discriminator import Discriminator, train_discriminator
 from rollout import ROLLOUT
 from trainutil import generate_samples, target_loss
 from datautil import load_task
-from synthetic import generate_random_sents, is_valid
+from synthetic import generate_random_sents, is_valid_phrase
 
 
 ###############################################################################
@@ -91,23 +91,20 @@ def main():
                         help='Number of discriminator pre-training steps')
         parser.add_argument('adv_n', type = int,
                         help='Number of adversarial pre-training steps')
-        parser.add_argument('-l', metavar="seq_len", type = int, default = -1,
-                        help = 'Length of the token sequences used for training.')
-        parser.add_argument('-v', metavar="vocab_size", type = int, default = -1,
-                        help = "For use with app = synth. Determines the size of vocab for synthetic data.")
         parser.add_argument('-mn', metavar="model_name", type = str, default = "",
                         help = "Name for the checkpoint files. Will be stored at ./<app>/models/<model_name>")
-    
+        parser.add_argument('-numeat', metavar="num_eat", type = int, default = 500,
+                        help = "For synthetic data generation. Determines number of eaters in vocab.")
+        parser.add_argument('-numfeed', metavar="num_feed", type = int, default = 500,
+                        help = "For synthetic data generation. Determines number of feeders in vocab.")
+        parser.add_argument('-numsent', metavar="num_sent", type = int, default = 10000,
+                        help = "For synthetic data generation. Determines number of sentences generated.")
         args = parser.parse_args()
 
-        #Generate synthetic data if required
-        if args.app == "synth" and args.v != "":
-            num_eat = (int(args.v) - 6) // 2 #Specific to the current synthetic generation
-            num_feed = int(args.v) - num_eaters
-        elif args.app == "synth" and args.v == "":
-            num_eat = 500
-            num_feed = 500
-        synthetic.generate_random_sents("../data/synth/input.txt", 10,000, num_feed, num_eat)
+        synth_gen_params = ("NA", "NA", "NA")
+        if args.app == "synth":
+            synth_gen_params = (args.numsent, args.numfeed, args.numeat)
+            generate_random_sents("../data/synth/input.txt", args.numsent, args.numfeed, args.numeat)
 
         task = load_task(args.app)
 
@@ -125,9 +122,9 @@ def main():
         if not os.path.exists("./"+model_string):
             os.mkdir("./"+model_string)
     
-        return args.gen_n, args.disc_n, args.adv_n, model_string, task
+        return args.gen_n, args.disc_n, args.adv_n, model_string, task, synth_gen_params
     
-    gen_n, disc_n, adv_n, MODEL_STRING, task = parse_arguments()
+    gen_n, disc_n, adv_n, MODEL_STRING, task, SYNTH_GEN_PARAMS = parse_arguments()
 
 
     assert START_TOKEN == 0
@@ -200,7 +197,7 @@ def main():
     with open(task.eval_file) as f:
         generated = []
         for line in f:
-            line = line.strip()
+            line = line.strip().split()
             generated.append(line)
         generated = task.vocab.decode(generated)
         f.close()
@@ -208,7 +205,7 @@ def main():
     with open(task.test_file) as f:
         references = []
         for line in f:
-            line = line.strip()
+            line = line.strip().split()
             references.append(line)
         references = task.vocab.decode(references)  
         f.close()      
@@ -218,11 +215,10 @@ def main():
     
     prop = "NA"
 
-    if files == synth_files:
-        
+    if task.name == "synth":
         total_correct = 0
         for sentence in generated:
-            if synthetic.is_phrase_valid_passive(sentence) or synthetic.is_phrase_valid_active(sentence):
+            if is_valid_phrase(sentence):
                 total_correct +=1
         prop = total_correct/len(generated)
         
@@ -230,11 +226,13 @@ def main():
         os.mknod("./results.csv")
 
     with open("./results.csv", 'a') as csvfile:
-        fieldnames = ["name", "task_name", "num_adv", "num_disc", "num_gen", 
-                            "num_eaters", "num_feeders", "BLEU", "prop_valid"]
+        fieldnames = ["name", "task_name", "num_gen", "num_disc", "num_adv",
+                    "num_sents", "num_feeders", "num_eaters", "BLEU", "prop_valid"]
         writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+        writer.writeheader()
         writer.writerow({"name": MODEL_STRING, "task_name": task.name,  "num_gen": gen_n, 
-                        "num_disc":disc_n "num_adv": adv_n, "vocab_length": task.vocab_size,
+                        "num_disc":disc_n, "num_adv": adv_n, "num_sents":SYNTH_GEN_PARAMS[0],
+                        "num_feeders":SYNTH_GEN_PARAMS[1], "num_eaters":SYNTH_GEN_PARAMS[2],
                         "BLEU": blue, "prop_valid": prop})
         f.close()
 

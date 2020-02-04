@@ -52,5 +52,6 @@ def is_valid_active(phrase):
     if "food" not in phrase[2]: return False
     return True
 
-def is_valid(phrase):
+def is_valid_phrase(phrase):
+    phrase = phrase.split()
     return is_valid_active(phrase) or is_valid_passive(phrase)

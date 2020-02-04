@@ -84,8 +84,8 @@ class Vocab:
     def decode(self, lines):
         text_ls = []    
         for line in lines:
-            parse_line = [self.int_to_word[x] for x in line 
-                          if self.int_to_word[x] != " _FILL_ "]
+            parse_line = [self.int_to_word[int(x)] for x in line 
+                          if self.int_to_word[int(x)] != " _FILL_ "]
             parse_line = " ".join(parse_line)
             text_ls.append(parse_line)
         return text_ls
@@ -127,7 +127,6 @@ def load_task(taskname):
             for ls in full_lists:
                 line = " ".join([str(x) for x in ls])+ "\n"
                 f.write(line)
-    self.name = taskname
     print("Loading task: " + str(taskname))
     if taskname == 'obama':
         max_seq_length = 40
@@ -158,6 +157,7 @@ def load_task(taskname):
 
     task = Task(vocab, path, max_seq_length, len(train_ls), 
                 len(valid_ls), len(test_ls))
+    task.name = taskname
 
     # Write to correct application training and validation files
     # Write conversion dictionaries
