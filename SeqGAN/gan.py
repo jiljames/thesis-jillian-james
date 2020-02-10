@@ -229,7 +229,9 @@ def main():
         fieldnames = ["name", "task_name", "num_gen", "num_disc", "num_adv",
                     "num_sents", "num_feeders", "num_eaters", "BLEU", "prop_valid"]
         writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
-        writer.writeheader()
+        csvfile.seek(0, os.SEEK_END) # go to end of file
+        if !my_file.tell(): # if current position is != 0)
+            writer.writeheader()
         writer.writerow({"name": MODEL_STRING, "task_name": task.name,  "num_gen": gen_n, 
                         "num_disc":disc_n, "num_adv": adv_n, "num_sents":SYNTH_GEN_PARAMS[0],
                         "num_feeders":SYNTH_GEN_PARAMS[1], "num_eaters":SYNTH_GEN_PARAMS[2],
