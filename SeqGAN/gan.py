@@ -219,7 +219,7 @@ def main():
                     "num_sents", "num_feeders", "num_eaters", "BLEU", "prop_valid"]
         writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
         csvfile.seek(0, os.SEEK_END) # go to end of file
-        if !my_file.tell(): # if current position is != 0)
+        if not csvfile.tell(): # if current position is != 0)
             writer.writeheader()
 
         blue = corpus_bleu([references]*len(generated), generated)
@@ -233,7 +233,7 @@ def main():
                 if is_valid_phrase(sentence):
                     total_correct +=1
             prop = total_correct/len(generated)
-            
+
         writer.writerow({"name": MODEL_STRING, "task_name": task.name,  "num_gen": gen_n, 
                         "num_disc":disc_n, "num_adv": adv_n, "num_sents":SYNTH_GEN_PARAMS[0],
                         "num_feeders":SYNTH_GEN_PARAMS[1], "num_eaters":SYNTH_GEN_PARAMS[2],
