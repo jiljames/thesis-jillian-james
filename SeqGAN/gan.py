@@ -117,6 +117,11 @@ def main():
         if args.mn == "":
             model_string += str(args.gen_n)+ "_" + str(args.disc_n) + "_" + str(args.adv_n)
             model_string += time.strftime("_on_%m_%d_%y", time.gmtime())
+            adder, i = "", 0
+            while os.path.exists("./"+model_string+adder):
+                adder = "_"+str(i)
+                i +=1
+            modelstring += adder
         else:
             model_string += args.mn
         if not os.path.exists("./"+model_string):
