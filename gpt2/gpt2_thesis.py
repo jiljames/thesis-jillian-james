@@ -21,4 +21,4 @@ gpt2.finetune(sess,
               model_name=model_name,
               steps=1000)   # steps is max number of training steps
 
-gpt2.generate(sess)
+gpt2.generate(sess, prefix = "$!BEGIN!$", truncate = "$!END!$", include_prefix=False, length=2048)
