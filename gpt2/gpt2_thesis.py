@@ -21,4 +21,21 @@ gpt2.finetune(sess,
               model_name=model_name,
               steps=1000)   # steps is max number of training steps
 
-gpt2.generate(sess, prefix = "$!BEGIN!$", truncate = "$!END!$", include_prefix=False, length=2048)
+length = 5000
+num_samples = 1
+next_prefix = gpt2.generate(sess, prefix = "$!BEGIN!$", include_prefix=True, return_as_list = True, length=1023)[0]
+full = []
+
+current_length = len(next_prefix)
+while next_prefix < length:
+    next_prefix = gpt2.generate(sess, prefix = next_prefix, return_as_list = True, length=1023)[0]
+    full.extend(next_prefix)
+    current_length += len(next_prefix)
+
+print("Current length: ", current_length)
+full.extend(gpt2.generate(sess, prefix = next_prefix, truncate = "$!END!$", return_as_list = True, length=1023)[0])
+
+sample_file_name = "sample.txt"
+f = open("sample.txt", w)
+for line in full:
+    f.write("%s\n" % line)
