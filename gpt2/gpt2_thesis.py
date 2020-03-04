@@ -3,6 +3,30 @@ import os
 import requests
 import sys
 
+LENGTH = 5*1023
+NUM_SAMPLES = 3
+PREFIX= ''' 
+$!BEGIN!$
+How Laziness Leads to Ingenuity: Exploring Lengthy Language Generation
+
+A Thesis
+Presented to
+Mathematics and Natural Sciences
+Reed College
+
+In Partial Fulfillment
+of the Requirements for the Degree
+Bachelor of Arts
+
+Jillian James
+May 2020
+
+Approved for the Division
+(Mathematics)
+Mark Hopkins
+'''
+
+
 model_name = "124M"
 if not os.path.isdir(os.path.join("models", model_name)):
     print(f"Downloading {model_name} model...")
@@ -13,7 +37,7 @@ file_name = "all_theses.txt"
 if not os.path.isfile(file_name):
     print("Thesis training data not present")
     sys.exit(0)
-    
+
 
 sess = gpt2.start_tf_sess()
 gpt2.finetune(sess,
@@ -21,21 +45,22 @@ gpt2.finetune(sess,
               model_name=model_name,
               steps=1000)   # steps is max number of training steps
 
-length = 5000
-num_samples = 1
-next_prefix = gpt2.generate(sess, prefix = "$!BEGIN!$", include_prefix=True, return_as_list = True, length=1023)[0]
-full = []
 
-current_length = len(next_prefix)
-while next_prefix < length:
-    next_prefix = gpt2.generate(sess, prefix = next_prefix, return_as_list = True, length=1023)[0]
-    full.extend(next_prefix)
-    current_length += len(next_prefix)
+for i in range(NUM_SAMPLES):
+    next_prefix = gpt2.generate(sess, prefix = PREFIX, include_prefix=True, return_as_list = True, length=1023)
+    full  = next_prefix
 
-print("Current length: ", current_length)
-full.extend(gpt2.generate(sess, prefix = next_prefix, truncate = "$!END!$", return_as_list = True, length=1023)[0])
+    current_length = len(next_prefix[0])
+    while current_length < length:
+        next_prefix = gpt2.generate(sess, prefix = next_prefix[0], return_as_list = True, length=1023)
+        full.extend(next_prefix)
+        current_length += len(next_prefix[0])
 
-sample_file_name = "sample.txt"
-f = open("sample.txt", w)
-for line in full:
-    f.write("%s\n" % line)
+    full.extend(gpt2.generate(sess, prefix = next_prefix[0], truncate = "$!END!$", return_as_list = True, length=1023))
+
+    sample_file_name = "./sample"+str(i)+".txt"
+    if not os.path.exists(sample_file_name):
+                        os.mknod(sample_file_name)
+    f = open(sample_file_name , 'w')
+    for sample in full:
+        f.write("%s\n" % sample)
