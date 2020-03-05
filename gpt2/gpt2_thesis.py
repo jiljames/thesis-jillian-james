@@ -25,7 +25,7 @@ Approved for the Division
 (Mathematics)
 Mark Hopkins
 '''
-
+os.environ["CUDA_VISIBLE_DEVICES"]="1,2" 
 
 model_name = "124M"
 if not os.path.isdir(os.path.join("models", model_name)):
@@ -39,6 +39,9 @@ if not os.path.isfile(file_name):
     sys.exit(0)
 
 
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+
 sess = gpt2.start_tf_sess()
 gpt2.finetune(sess,
               file_name,
@@ -47,16 +50,18 @@ gpt2.finetune(sess,
 
 
 for i in range(NUM_SAMPLES):
-    next_prefix = gpt2.generate(sess, prefix = PREFIX, include_prefix=True, return_as_list = True, length=1023)
-    full  = next_prefix
+    full = [PREFIX]
+    next_prefix = PREFIX
+    current_length = len(PREFIX)
 
-    current_length = len(next_prefix[0])
-    while current_length < length:
-        next_prefix = gpt2.generate(sess, prefix = next_prefix[0], return_as_list = True, length=1023)
-        full.extend(next_prefix)
-        current_length += len(next_prefix[0])
+    while current_length < LENGTH:
+        next_prefix = gpt2.generate(sess, prefix = next_prefix,
+                    return_as_list = True, length=1023)[0][len(next_prefix:)]
+        full.append(next_prefix)
+        current_length += len(next_prefix)
 
-    full.extend(gpt2.generate(sess, prefix = next_prefix[0], truncate = "$!END!$", return_as_list = True, length=1023))
+    full.append(gpt2.generate(sess, prefix = next_prefix,
+                truncate = "$!END!$", return_as_list = True, length=1023)[0[len(next_prefix):]])
 
     sample_file_name = "./sample"+str(i)+".txt"
     if not os.path.exists(sample_file_name):
@@ -64,3 +69,4 @@ for i in range(NUM_SAMPLES):
     f = open(sample_file_name , 'w')
     for sample in full:
         f.write("%s\n" % sample)
+        f.write("__________________________________________")
