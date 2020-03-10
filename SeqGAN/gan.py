@@ -117,6 +117,11 @@ def main():
         if args.mn == "":
             model_string += str(args.gen_n)+ "_" + str(args.disc_n) + "_" + str(args.adv_n)
             model_string += time.strftime("_on_%m_%d_%y", time.gmtime())
+            adder, i = "", 0
+            while os.path.exists("./"+model_string+adder):
+                adder = "_"+str(i)
+                i +=1
+            modelstring += adder
         else:
             model_string += args.mn
         if not os.path.exists("./"+model_string):
@@ -210,17 +215,6 @@ def main():
         references = task.vocab.decode(references)  
         f.close()      
 
-    blue = corpus_bleu([references]*len(generated), generated)
-    print("Run with args {} {} {}: BLEUscore = {}\n".format(gen_n, disc_n, adv_n, blue))
-    
-    prop = "NA"
-
-    if task.name == "synth":
-        total_correct = 0
-        for sentence in generated:
-            if is_valid_phrase(sentence):
-                total_correct +=1
-        prop = total_correct/len(generated)
         
     if not os.path.exists("./results.csv"):
         os.mknod("./results.csv")
@@ -229,7 +223,22 @@ def main():
         fieldnames = ["name", "task_name", "num_gen", "num_disc", "num_adv",
                     "num_sents", "num_feeders", "num_eaters", "BLEU", "prop_valid"]
         writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
-        writer.writeheader()
+        csvfile.seek(0, os.SEEK_END) # go to end of file
+        if not csvfile.tell(): # if current position is != 0)
+            writer.writeheader()
+
+        blue = corpus_bleu([references]*len(generated), generated)
+        print("Run with args {} {} {}: BLEUscore = {}\n".format(gen_n, disc_n, adv_n, blue))
+        
+        prop = "NA"
+
+        if task.name == "synth":
+            total_correct = 0
+            for sentence in generated:
+                if is_valid_phrase(sentence):
+                    total_correct +=1
+            prop = total_correct/len(generated)
+
         writer.writerow({"name": MODEL_STRING, "task_name": task.name,  "num_gen": gen_n, 
                         "num_disc":disc_n, "num_adv": adv_n, "num_sents":SYNTH_GEN_PARAMS[0],
                         "num_feeders":SYNTH_GEN_PARAMS[1], "num_eaters":SYNTH_GEN_PARAMS[2],

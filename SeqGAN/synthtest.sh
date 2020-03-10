@@ -1,4 +1,12 @@
 #!/bin/bash
+echo "Running gan.py synth 1 1 1"
+python3 gan.py synth 1 1 1
+echo "Running gan.py synth 5 5 5"
+python3 gan.py synth 5 5 5
+echo "Running gan.py synth 1 1 1"
+python3 gan.py synth 1 1 1
+echo "Running gan.py synth 5 5 5"
+python3 gan.py synth 5 5 5
 echo "Running gan.py synth 10 10 10"
 python3 gan.py synth 10 10 10
 echo "Running gan.py synth 20 20 20"
