@@ -7,47 +7,6 @@ import tensorflow as tf
 import argparse
 import sys
 
-GEN_LENGTH = 1023
-LENGTH = 10*GEN_LENGTH
-NUM_SAMPLES = 5
-# <|startoftext|>
-# How Laziness Leads to Ingenuity: Exploring Lengthy Language Generation
-
-# A Thesis
-# Presented to
-# Mathematics and Natural Sciences
-# Reed College
-
-# In Partial Fulfillment
-# of the Requirements for the Degree
-# Bachelor of Arts
-
-# Jillian James
-# May 2020
-
-# Approved for the Division
-# (Mathematics)
-# Mark Hopkins
-
-# Introduction
-# While language generation has a large number of applications, each of these applications begins with
-# data. In order to do natural language generation you must first have data that you would like to convert
-# '''
-# phrase1 = '''
-# Extended Red Emission (ERE) is a widely observed optical emission process, present in a wide range
-# of circumstellar and interstellar environments in the Milky Way galaxy as well as other galaxies.
-# '''
-# phrase2 = '''
-# I consider decision-making constrained by considerations of morality, rationality, or other virtues.
-# The decision maker (DM) has a true preference over outcomes, but feels compelled to choose among
-# outcomes that are top-ranked by some preference that he considers "justifiable." 
-# '''
-# phrase3 = '''
-# Cascading large-amplitude bursts in neural activity, termed avalanches, are thought to provide insight
-# into the complex spatially distributed interactions in neural systems. 
-# '''
-# PREFIX = [phrase1, phrase2, phrase3]
-
 
 
  #  Create a parser to parse user input
@@ -57,17 +16,22 @@ def parse_arguments():
                     help = "Path of dir for gernerated samples to write to.")
     parser.add_argument('-model', type = str, default = "124M", choices=['124M', '355M', '774M'],
                     help = "Path of training data. Can be file or directory")                    
-    parser.add_argument('-data', metavar="data_path", type = str, default = "",
-                    help = "Path of training data. Can be file or directory.")
-    parser.add_argument('-train', type = int, default = 0,
+    parser.add_argument('-train', metavar="path", type = str, default = "",
+                    help = "Path of training dataset. Can be file or directory.")
+    parser.add_argument('-valid', metavar="path", type = str, default = "",
+                    help = "Path of validation dataset. Can be file or directory.")
+    parser.add_argument('-steps', type = int, default = 0,
                     help = "Number of finetune steps for GPT2. ")
     parser.add_argument('-prefix', type = str, default = "<|startoftext|>",
                     help = "Prefix for generation. Either string or filename.")
     args = parser.parse_args()
 
-    if args.train > 0:
-        if not os.path.isdir(args.data) or not os.path.isdir(args.data):
-            sys.exit("Incorrect path provided to -data argument required for training.")
+    if args.steps > 0:
+        if not os.path.isdir(args.train) or not os.path.isdir(args.train):
+            sys.exit("A correct path for the training dataset must be passed with -train argument in order to finetune.")
+        if not os.path.isdir(args.valid) or not os.path.isdir(args.valid):
+            sys.exit("A correct path for the validation dataset must be passed with -valid argument in order to finetune.")
+            
     
     
     if not os.path.isdir(args.output):
@@ -80,13 +44,15 @@ def parse_arguments():
     else:
         prefix = args.prefix
 
-    return args.model, args.output, args.data, args.train, prefix
+    return args.model, args.output, args.train, args.valid, args.steps, prefix
+
+GEN_LENGTH = 1023
+LENGTH = 10*GEN_LENGTH
+NUM_SAMPLES = 5
 
 
+MODEL, OUTPUT_DIR, TRAIN_PATH, VALID_PATH, TRAIN_STEPS, PREFIX =  parse_arguments()
 
-MODEL, OUTPUT_DIR, TRAIN_PATH, TRAIN_STEPS, PREFIX =  parse_arguments()
-
-VALID_PATH = "valid_clean_etheses"
 
 #For Mark's machine
 os.environ["CUDA_VISIBLE_DEVICES"]="1,2" 

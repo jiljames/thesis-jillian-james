@@ -357,6 +357,7 @@ def finetune(sess,
                 counter=counter,
                 time=time.time() - start_time,
                 loss=v_val_loss))
+        return v_val_loss
 
     def sample_batch():
         return [data_sampler.sample(1024) for _ in range(batch_size)]
@@ -370,22 +371,30 @@ def finetune(sess,
     avg_loss = (0.0, 0.0)
     start_time = time.time()
 
+    #Trying out a change to finetune that saves only when validation loss decreases
     if steps:
         steps = int(steps)
     
     try:
         while True:
             if steps > 0 and counter == (counter_base + steps):
-                save()
+                #save()
                 return
-            if (counter - 1) % save_every == 0 and counter > 1:
-                save()
+            # if (counter - 1) % save_every == 0 and counter > 1:
+            #     save()
             if (counter - 1) % sample_every == 0 and counter > 1:
                 generate_samples()
             
-            # validation code    
-            if val_every > 0 and (counter % val_every == 0 or counter == 1):
-                validation()
+            # validation code
+            if val_every > 0 and counter == 1:
+                val_loss = validation()   
+                save()
+            elif val_every > 0 and (counter % val_every == 0):
+                new_val_loss = validation()
+                if new_val_loss < val_loss:
+                    val_loss = new_val_loss
+                    save()
+            
 
             if accumulate_gradients > 1:
                 sess.run(opt_reset)
