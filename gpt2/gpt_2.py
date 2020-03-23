@@ -387,12 +387,12 @@ def finetune(sess,
             
             # validation code
             if val_every > 0 and counter == 1:
-                val_loss = validation()   
+                v_val_loss = validation()
                 save()
             elif val_every > 0 and (counter % val_every == 0):
-                new_val_loss = validation()
-                if new_val_loss < val_loss:
-                    val_loss = new_val_loss
+                new_v_val_loss = validation()
+                if new_v_val_loss < v_val_loss:
+                    v_val_loss = new_v_val_loss
                     save()
             
 
